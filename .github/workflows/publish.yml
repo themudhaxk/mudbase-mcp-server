@@ -1,0 +1,102 @@
+# Publish mudbase-mcp-server (repo: github.com/themudhaxk/mudbase-mcp-server)
+#
+# ═══════════════════════════════════════════════════════════════════════════
+# One-time human setup required before this workflow can publish anything
+# ═══════════════════════════════════════════════════════════════════════════
+#   This package publishes to npm via Trusted Publishing (OIDC) - there is no
+#   NPM_TOKEN secret to configure, and none should ever be added here. Instead,
+#   a Trusted Publisher must be configured manually on npmjs.com for this exact
+#   org/repo/workflow-filename combination before the publish step will work:
+#
+#     npmjs.com -> mudbase-mcp-server package -> Settings -> Trusted publishing
+#       Publisher: GitHub Actions
+#       Organization or user: themudhaxk
+#       Repository: mudbase-mcp-server
+#       Workflow filename: publish.yml
+#       Environment: (leave blank unless one is added below)
+#
+#   CI cannot do this step for you - npm requires it to be set up by a human
+#   with publish rights on the package (or, for a brand-new package name, right
+#   after the very first manual `npm publish` claims the name). Until this is
+#   configured, the publish step below will fail with an auth error; the
+#   typecheck/test/lint steps still run and still gate every push to main.
+#
+name: Publish
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - package.json
+  workflow_dispatch:
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      version_changed: ${{ steps.check.outputs.version_changed }}
+      new_version: ${{ steps.check.outputs.new_version }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Check if version changed
+        id: check
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "new_version=$VERSION" >> "$GITHUB_OUTPUT"
+          PUBLISHED=$(npm view mudbase-mcp-server@"$VERSION" version 2>/dev/null || true)
+          # Exact match only - a substring check here would misfire the same
+          # way the SDK workflow's tag check once did on adjacent versions.
+          if [ "$PUBLISHED" = "$VERSION" ]; then
+            echo "version_changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "version_changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  test-and-publish:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.version_changed == 'true'
+    runs-on: ubuntu-latest
+    # Trusted Publishing (OIDC) needs a token GitHub mints for this job - no
+    # NPM_TOKEN, nothing to rotate or lose to npm's 2FA-bypass-token phase-out.
+    # Requires the Trusted Publisher configured on npmjs.com per the header
+    # comment above (org=themudhaxk, repo=mudbase-mcp-server, workflow=publish.yml).
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Run tests
+        run: npm test
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Ensure npm CLI supports Trusted Publishing (needs 11.5.1+)
+        run: npm install -g npm@latest
+
+      - name: Publish to npm via Trusted Publishing
+        run: |
+          VER=$(node -p "require('./package.json').version")
+          if npm view "mudbase-mcp-server@${VER}" version 2>/dev/null | grep -q .; then
+            echo "mudbase-mcp-server@${VER} already on npm - skipping"
+            exit 0
+          fi
+          npm publish --access public

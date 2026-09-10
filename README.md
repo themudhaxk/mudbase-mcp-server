@@ -10,7 +10,7 @@ search across a project, and manage files in storage.
 ## Requirements
 
 - A Mudbase account and project. If you don't have one yet, create one at
-  [cloud.mudbase.dev](https://cloud.mudbase.dev).
+  [www.mudbase.dev](https://www.mudbase.dev).
 - An API key for that project, generated from your project's API Keys settings.
 - Node.js 18 or newer (only needed to run `npx`; most MCP clients already bundle Node).
 

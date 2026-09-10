@@ -10,7 +10,7 @@ async function main(): Promise<void> {
       "[mudbase-mcp-server] MUDBASE_API_KEY is not set. Add it to your MCP client's env config, e.g.:\n" +
         '  { "mcpServers": { "mudbase": { "command": "npx", "args": ["mudbase-mcp-server"], ' +
         '"env": { "MUDBASE_API_KEY": "ak_..." } } } }\n' +
-        "Get an API key from your Mudbase project settings at https://cloud.mudbase.dev.",
+        "Get an API key from your Mudbase project settings at https://www.mudbase.dev/console.",
     );
     process.exit(1);
   }

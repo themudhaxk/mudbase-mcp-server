@@ -8,10 +8,10 @@
   "homepage": "https://mudbase.dev",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mudbase/mudbase-mcp-server.git"
+    "url": "git+https://github.com/themudhaxk/mudbase-mcp-server.git"
   },
   "bugs": {
-    "url": "https://github.com/mudbase/mudbase-mcp-server/issues"
+    "url": "https://github.com/themudhaxk/mudbase-mcp-server/issues"
   },
   "keywords": [
     "mcp",

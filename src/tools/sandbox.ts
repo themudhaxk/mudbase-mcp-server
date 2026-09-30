@@ -197,7 +197,7 @@ export function registerSandboxTools(server: McpServer, client: MudbaseClient): 
           )
           .min(1)
           .max(200)
-          .describe("List of files to write (max 200 files, 50 MB total decoded content)."),
+          .describe("List of files to write (max 200 files, 9 MB text or 12 MB base64 content per call)."),
       },
     },
     async (args) =>

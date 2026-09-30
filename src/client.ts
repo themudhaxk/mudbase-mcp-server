@@ -2,7 +2,7 @@ import axios, { type AxiosInstance, type AxiosRequestConfig, isAxiosError } from
 import FormData from "form-data";
 
 /** Default Mudbase API base URL. Override with MUDBASE_BASE_URL for self-hosted or staging use. */
-export const DEFAULT_BASE_URL = "https://cloud.mudbase.dev";
+export const DEFAULT_BASE_URL = "https://api.mudbase.dev";
 
 /** Normalized error thrown for any failed Mudbase API call. */
 export class MudbaseApiError extends Error {

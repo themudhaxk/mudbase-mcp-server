@@ -50,7 +50,7 @@ common one.
 | Environment variable | Required | Description |
 | --- | --- | --- |
 | `MUDBASE_API_KEY` | Yes | Your Mudbase project API key. The server refuses to start without it and prints a clear error explaining how to set it. |
-| `MUDBASE_BASE_URL` | No | Override the API base URL (defaults to `https://cloud.mudbase.dev`). Only needed for a self-hosted or non-default deployment. |
+| `MUDBASE_BASE_URL` | No | Override the API base URL (defaults to `https://api.mudbase.dev`). Only needed for a self-hosted or non-default deployment. |
 
 The API key is read from the environment only. It is never logged, never written to disk, and
 never hardcoded anywhere in this package.

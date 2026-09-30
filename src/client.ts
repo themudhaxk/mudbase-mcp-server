@@ -239,6 +239,164 @@ export class MudbaseClient {
     });
   }
 
+  // ---- Sandbox (Cells) ----
+
+  /**
+   * Create a new sandbox session.
+   * Maps to POST /api/sandboxes/projects/:projectId
+   */
+  createSandboxSession(params: {
+    projectId: string;
+    language?: string;
+    languageVersion?: string;
+    timeoutSeconds?: number;
+    cellName?: string;
+    sizeId?: string;
+  }): Promise<unknown> {
+    const { projectId, language, languageVersion, timeoutSeconds, cellName, sizeId } = params;
+    const body: Record<string, unknown> = {
+      language: language ?? "python",
+      languageVersion: languageVersion ?? "3.12",
+      timeoutSeconds: timeoutSeconds ?? 300,
+    };
+    if (cellName !== undefined) body.cellName = cellName;
+    if (sizeId !== undefined) body.sizeId = sizeId;
+    return this.request({
+      method: "POST",
+      url: `/api/sandboxes/projects/${encodeURIComponent(projectId)}`,
+      data: body,
+    });
+  }
+
+  /** List running sessions. Maps to GET /api/sandboxes/projects/:projectId */
+  listSandboxSessions(params: { projectId: string }): Promise<unknown> {
+    return this.request({
+      method: "GET",
+      url: `/api/sandboxes/projects/${encodeURIComponent(params.projectId)}`,
+    });
+  }
+
+  /** Get one session. Maps to GET /api/sandboxes/projects/:projectId/sessions/:sessionId */
+  getSandboxSession(params: { projectId: string; sessionId: string }): Promise<unknown> {
+    return this.request({
+      method: "GET",
+      url: `/api/sandboxes/projects/${encodeURIComponent(params.projectId)}/sessions/${encodeURIComponent(params.sessionId)}`,
+    });
+  }
+
+  /** Close a session. Maps to DELETE /api/sandboxes/projects/:projectId/sessions/:sessionId */
+  closeSandboxSession(params: { projectId: string; sessionId: string }): Promise<unknown> {
+    return this.request({
+      method: "DELETE",
+      url: `/api/sandboxes/projects/${encodeURIComponent(params.projectId)}/sessions/${encodeURIComponent(params.sessionId)}`,
+    });
+  }
+
+  /**
+   * Exec a command (non-streaming). Uses a 120 s axios timeout and returns the full
+   * streamed SSE body as a plain string. The caller is responsible for parsing lines.
+   * Maps to POST /api/sandboxes/projects/:projectId/sessions/:sessionId/exec
+   */
+  execSandboxCommand(params: {
+    projectId: string;
+    sessionId: string;
+    cmd: string[];
+    timeoutMs?: number;
+    workingDir?: string;
+    env?: Record<string, string>;
+  }): Promise<unknown> {
+    return this.request({
+      method: "POST",
+      url: `/api/sandboxes/projects/${encodeURIComponent(params.projectId)}/sessions/${encodeURIComponent(params.sessionId)}/exec`,
+      data: {
+        cmd: params.cmd,
+        timeoutMs: params.timeoutMs ?? 60000,
+        workingDir: params.workingDir ?? "/workspace",
+        env: params.env ?? {},
+      },
+      timeout: (params.timeoutMs ?? 60000) + 10000,
+      headers: { Accept: "text/event-stream" },
+      responseType: "text",
+    });
+  }
+
+  /**
+   * Write files into a running session.
+   * Maps to POST /api/sandboxes/projects/:projectId/sessions/:sessionId/files
+   * Returns HTTP 207 for partial success; the full result body is always returned.
+   */
+  writeSandboxFiles(params: {
+    projectId: string;
+    sessionId: string;
+    files: Array<{ path: string; content: string; encoding?: "text" | "base64" }>;
+  }): Promise<unknown> {
+    return this.request({
+      method: "POST",
+      url: `/api/sandboxes/projects/${encodeURIComponent(params.projectId)}/sessions/${encodeURIComponent(params.sessionId)}/files`,
+      data: { files: params.files },
+      validateStatus: (s) => s < 500,
+    });
+  }
+
+  /**
+   * Read a single file from a running session.
+   * Maps to GET /api/sandboxes/projects/:projectId/sessions/:sessionId/files?path=...
+   */
+  readSandboxFile(params: { projectId: string; sessionId: string; path: string }): Promise<unknown> {
+    return this.request({
+      method: "GET",
+      url: `/api/sandboxes/projects/${encodeURIComponent(params.projectId)}/sessions/${encodeURIComponent(params.sessionId)}/files`,
+      params: { path: params.path },
+    });
+  }
+
+  /**
+   * Start a named service inside a session.
+   * Maps to POST /api/sandboxes/projects/:projectId/sessions/:sessionId/services
+   */
+  startSandboxService(params: {
+    projectId: string;
+    sessionId: string;
+    name: string;
+    cmd: string[];
+    cwd?: string;
+    port?: number;
+    waitForPort?: boolean;
+    timeoutMs?: number;
+    env?: Record<string, string>;
+  }): Promise<unknown> {
+    const { projectId, sessionId, name, cmd, cwd, port, waitForPort, timeoutMs, env } = params;
+    const body: Record<string, unknown> = { name, cmd };
+    if (cwd !== undefined) body.cwd = cwd;
+    if (port !== undefined) body.port = port;
+    if (waitForPort !== undefined) body.waitForPort = waitForPort;
+    if (timeoutMs !== undefined) body.timeoutMs = timeoutMs;
+    if (env !== undefined) body.env = env;
+    return this.request({
+      method: "POST",
+      url: `/api/sandboxes/projects/${encodeURIComponent(projectId)}/sessions/${encodeURIComponent(sessionId)}/services`,
+      data: body,
+      timeout: (timeoutMs ?? 30000) + 5000,
+    });
+  }
+
+  /**
+   * Expose an internal port on the session.
+   * Maps to POST /api/sandboxes/projects/:projectId/sessions/:sessionId/expose
+   */
+  exposeSandboxPort(params: {
+    projectId: string;
+    sessionId: string;
+    port: number;
+    access?: "public" | "token-gated";
+  }): Promise<unknown> {
+    return this.request({
+      method: "POST",
+      url: `/api/sandboxes/projects/${encodeURIComponent(params.projectId)}/sessions/${encodeURIComponent(params.sessionId)}/expose`,
+      data: { port: params.port, access: params.access ?? "public" },
+    });
+  }
+
   async uploadFile(params: UploadFileParams): Promise<unknown> {
     const buffer = Buffer.from(params.contentBase64, "base64");
     if (buffer.length === 0) {

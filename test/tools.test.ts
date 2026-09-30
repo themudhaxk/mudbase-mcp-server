@@ -32,6 +32,16 @@ function createFakeClient(overrides: Partial<Record<keyof MudbaseClient, unknown
     deleteFile: vi.fn(),
     getFileDownloadUrl: vi.fn(),
     uploadFile: vi.fn(),
+    // Sandbox (Cells) methods
+    createSandboxSession: vi.fn(),
+    listSandboxSessions: vi.fn(),
+    getSandboxSession: vi.fn(),
+    closeSandboxSession: vi.fn(),
+    execSandboxCommand: vi.fn(),
+    writeSandboxFiles: vi.fn(),
+    readSandboxFile: vi.fn(),
+    startSandboxService: vi.fn(),
+    exposeSandboxPort: vi.fn(),
   };
   return { ...base, ...overrides } as unknown as MudbaseClient;
 }
@@ -58,6 +68,16 @@ describe("registerAllTools", () => {
         "mudbase_upload_file",
         "mudbase_delete_file",
         "mudbase_get_file_download_url",
+        // Sandbox (Cells) tools
+        "mudbase_create_sandbox_session",
+        "mudbase_list_sandbox_sessions",
+        "mudbase_get_sandbox_session",
+        "mudbase_close_sandbox_session",
+        "mudbase_exec_sandbox_command",
+        "mudbase_write_sandbox_files",
+        "mudbase_read_sandbox_file",
+        "mudbase_start_sandbox_service",
+        "mudbase_expose_sandbox_port",
       ].sort(),
     );
   });
@@ -180,5 +200,155 @@ describe("mudbase_list_documents tool handler", () => {
       sort: "-createdAt",
       filter: '{"status":"active"}',
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Sandbox (Cells) tool tests
+// ---------------------------------------------------------------------------
+
+describe("mudbase_create_sandbox_session tool handler", () => {
+  it("forwards all session creation args to the client", async () => {
+    const { server, tools } = createFakeServer();
+    const client = createFakeClient();
+    const sessionResult = {
+      success: true,
+      sessionId: "sess123",
+      wsUrl: "wss://ws.sandbox.mudbase.dev/...",
+      timeoutAt: "2026-09-30T09:00:00Z",
+      language: "python",
+      languageVersion: "3.12",
+    };
+    (client.createSandboxSession as ReturnType<typeof vi.fn>).mockResolvedValue(sessionResult);
+    registerAllTools(server, client);
+
+    const tool = tools.get("mudbase_create_sandbox_session")!;
+    const result = await tool.handler({
+      projectId: "proj1",
+      language: "python",
+      languageVersion: "3.12",
+      timeoutSeconds: 300,
+      cellName: "my-cell",
+    });
+
+    expect(client.createSandboxSession).toHaveBeenCalledWith({
+      projectId: "proj1",
+      language: "python",
+      languageVersion: "3.12",
+      timeoutSeconds: 300,
+      cellName: "my-cell",
+      sizeId: undefined,
+    });
+    expect(result.isError).toBeUndefined();
+    const body = JSON.parse(result.content[0].text);
+    expect(body.sessionId).toBe("sess123");
+  });
+
+  it("returns an MCP error result when session creation fails with 402", async () => {
+    const { server, tools } = createFakeServer();
+    const client = createFakeClient();
+    (client.createSandboxSession as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new MudbaseApiError("Monthly sandbox allowance reached.", { status: 402, code: "SMALL_HOURS_EXHAUSTED" }),
+    );
+    registerAllTools(server, client);
+
+    const tool = tools.get("mudbase_create_sandbox_session")!;
+    const result = await tool.handler({ projectId: "proj1" });
+
+    expect(result.isError).toBe(true);
+    const payload = JSON.parse(result.content[0].text);
+    expect(payload.status).toBe(402);
+    expect(payload.code).toBe("SMALL_HOURS_EXHAUSTED");
+  });
+});
+
+describe("mudbase_exec_sandbox_command tool handler", () => {
+  it("forwards cmd, timeoutMs, and env to the client", async () => {
+    const { server, tools } = createFakeServer();
+    const client = createFakeClient();
+    (client.execSandboxCommand as ReturnType<typeof vi.fn>).mockResolvedValue(
+      "data: stdout:hello\n\ndata: exit:0\n\n",
+    );
+    registerAllTools(server, client);
+
+    const tool = tools.get("mudbase_exec_sandbox_command")!;
+    await tool.handler({
+      projectId: "proj1",
+      sessionId: "sess1",
+      cmd: ["python", "-c", "print('hello')"],
+      timeoutMs: 5000,
+      workingDir: "/workspace",
+    });
+
+    expect(client.execSandboxCommand).toHaveBeenCalledWith({
+      projectId: "proj1",
+      sessionId: "sess1",
+      cmd: ["python", "-c", "print('hello')"],
+      timeoutMs: 5000,
+      workingDir: "/workspace",
+      env: undefined,
+    });
+  });
+});
+
+describe("mudbase_write_sandbox_files tool handler", () => {
+  it("forwards files array to the client", async () => {
+    const { server, tools } = createFakeServer();
+    const client = createFakeClient();
+    (client.writeSandboxFiles as ReturnType<typeof vi.fn>).mockResolvedValue({
+      success: true,
+      results: [{ path: "app.py", success: true }],
+    });
+    registerAllTools(server, client);
+
+    const tool = tools.get("mudbase_write_sandbox_files")!;
+    const files = [{ path: "app.py", content: "print('hi')", encoding: "text" as const }];
+    await tool.handler({ projectId: "proj1", sessionId: "sess1", files });
+
+    expect(client.writeSandboxFiles).toHaveBeenCalledWith({
+      projectId: "proj1",
+      sessionId: "sess1",
+      files,
+    });
+  });
+});
+
+describe("mudbase_expose_sandbox_port tool handler", () => {
+  it("forwards port and access to the client and returns publicUrl", async () => {
+    const { server, tools } = createFakeServer();
+    const client = createFakeClient();
+    (client.exposeSandboxPort as ReturnType<typeof vi.fn>).mockResolvedValue({
+      success: true,
+      port: 8000,
+      publicUrl: "https://sb-sess1-8000.sandbox.mudbase.dev",
+    });
+    registerAllTools(server, client);
+
+    const tool = tools.get("mudbase_expose_sandbox_port")!;
+    const result = await tool.handler({ projectId: "proj1", sessionId: "sess1", port: 8000 });
+
+    expect(client.exposeSandboxPort).toHaveBeenCalledWith({
+      projectId: "proj1",
+      sessionId: "sess1",
+      port: 8000,
+      access: undefined,
+    });
+    expect(result.isError).toBeUndefined();
+    const body = JSON.parse(result.content[0].text);
+    expect(body.publicUrl).toBe("https://sb-sess1-8000.sandbox.mudbase.dev");
+  });
+});
+
+describe("mudbase_close_sandbox_session tool handler", () => {
+  it("calls closeSandboxSession with the correct IDs", async () => {
+    const { server, tools } = createFakeServer();
+    const client = createFakeClient();
+    (client.closeSandboxSession as ReturnType<typeof vi.fn>).mockResolvedValue({ success: true });
+    registerAllTools(server, client);
+
+    const tool = tools.get("mudbase_close_sandbox_session")!;
+    await tool.handler({ projectId: "proj1", sessionId: "sess1" });
+
+    expect(client.closeSandboxSession).toHaveBeenCalledWith({ projectId: "proj1", sessionId: "sess1" });
   });
 });

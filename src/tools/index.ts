@@ -4,6 +4,7 @@ import { registerCollectionTools } from "./collections.js";
 import { registerDocumentTools } from "./documents.js";
 import { registerSearchTools } from "./search.js";
 import { registerStorageTools } from "./storage.js";
+import { registerSandboxTools } from "./sandbox.js";
 
 /** Register every Mudbase tool onto the given MCP server, bound to one authenticated client. */
 export function registerAllTools(server: McpServer, client: MudbaseClient): void {
@@ -11,4 +12,5 @@ export function registerAllTools(server: McpServer, client: MudbaseClient): void
   registerDocumentTools(server, client);
   registerSearchTools(server, client);
   registerStorageTools(server, client);
+  registerSandboxTools(server, client);
 }

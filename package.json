@@ -1,7 +1,7 @@
 {
   "name": "mudbase-mcp-server",
-  "version": "0.1.1",
-  "description": "MCP server that exposes Mudbase's database, storage, and search capabilities as tools for Claude Code and other MCP clients, gated by a Mudbase API key.",
+  "version": "0.2.0",
+  "description": "MCP server that exposes Mudbase database, storage, search, and Cells sandbox capabilities as tools for Claude Code and other MCP clients, gated by a Mudbase API key.",
   "type": "module",
   "license": "MIT",
   "author": "Mudbase Team",
@@ -21,7 +21,10 @@
     "claude",
     "claude-code",
     "database",
-    "storage"
+    "storage",
+    "sandbox",
+    "cells",
+    "code-execution"
   ],
   "bin": {
     "mudbase-mcp-server": "dist/index.js"

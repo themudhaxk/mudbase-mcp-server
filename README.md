@@ -16,8 +16,15 @@ search across a project, and manage files in storage.
 
 ## Install
 
-No install step is required. Point your MCP client at `npx mudbase-mcp-server` and it will
-download and run the latest version on demand.
+The npm package is not yet published. Install directly from GitHub while the package is in
+pre-release:
+
+```sh
+npm install -g github:themudhaxk/mudbase-mcp-server
+```
+
+Once installed, point your MCP client at the `mudbase-mcp-server` binary. When the package is
+published to npm you can switch to `npx mudbase-mcp-server` and it will update automatically.
 
 ### Claude Code
 
@@ -27,8 +34,7 @@ Add this to your Claude Code MCP configuration:
 {
   "mcpServers": {
     "mudbase": {
-      "command": "npx",
-      "args": ["mudbase-mcp-server"],
+      "command": "mudbase-mcp-server",
       "env": { "MUDBASE_API_KEY": "ak_..." }
     }
   }

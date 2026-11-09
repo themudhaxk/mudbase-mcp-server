@@ -4,7 +4,7 @@
   "description": "MCP server that exposes Mudbase database, storage, search, and Cells sandbox capabilities as tools for Claude Code and other MCP clients, gated by a Mudbase API key.",
   "type": "module",
   "license": "MIT",
-  "author": "Mudbase Team",
+  "author": "Mudbase Inc",
   "homepage": "https://mudbase.dev",
   "repository": {
     "type": "git",

@@ -7,6 +7,43 @@ Every request is authenticated with a Mudbase API key, so this connects your ass
 to real data in your own Mudbase project: list and query collections, read and write documents,
 search across a project, and manage files in storage.
 
+## Quickstart
+
+Connect your AI coding tool to a Mudbase project in about five minutes. You need Node.js 18 or newer and a project API key from your project's API Keys settings.
+
+The package is not on npm yet, and a GitHub install does not build `dist/`, so clone and build it first:
+
+```sh
+git clone https://github.com/themudhaxk/mudbase-mcp-server.git
+cd mudbase-mcp-server
+npm install
+npm run build
+npm install -g .
+```
+
+Then add the server to your client's MCP configuration. For Claude Code, put this `mcpServers` block in `.mcp.json` at your project root:
+
+```json
+{
+  "mcpServers": {
+    "mudbase": {
+      "command": "mudbase-mcp-server",
+      "env": { "MUDBASE_API_KEY": "ak_..." }
+    }
+  }
+}
+```
+
+Replace `ak_...` with your project API key, restart the client, and ask it to list the collections in your project. The three tools you will use most:
+
+- `mudbase_list_collections` (`projectId`): every collection and its fields. Call it first so the assistant knows the schema.
+- `mudbase_list_documents` (`projectId`, `collectionId`, optional `filter`, `sort`, `limit`): read documents. `filter` is a JSON string such as `{"status":"active"}`.
+- `mudbase_create_document` (`projectId`, `collectionId`, `data`): insert a document whose fields match the collection's schema.
+
+Full docs: [docs.mudbase.dev](https://docs.mudbase.dev).
+
+<!-- TODO(quickstart, unverified): the `.mcp.json` location for Claude Code is not confirmed from this repository; verify against Claude Code's current MCP docs before merging. Not run with a live project or a real key. -->
+
 ## Requirements
 
 - A Mudbase account and project. If you don't have one yet, create one at

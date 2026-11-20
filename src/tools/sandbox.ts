@@ -1,11 +1,12 @@
 /**
- * Sandbox (Cells) tools for the Mudbase MCP server.
+ * Sandbox tools for the Mudbase MCP server. Registered only when the
+ * MUDBASE_ENABLE_SANDBOX_TOOLS environment variable is on (see tools/index.ts).
  *
  * These tools give an MCP client (Claude Code, Claude Desktop, etc.) the
  * ability to create and manage cloud sandbox sessions, run commands,
  * read and write files, start services, and expose ports.
  *
- * Each tool maps to exactly one documented Mudbase Cells API endpoint.
+ * Each tool maps to exactly one documented Mudbase sandbox API endpoint.
  * Auth is the same X-API-Key used for all other Mudbase tools.
  */
 
@@ -311,6 +312,7 @@ export function registerSandboxTools(server: McpServer, client: MudbaseClient): 
       description:
         "Expose an internal port so the session is reachable from the internet. " +
         "Returns a publicUrl in the form https://sb-{sessionId}-{port}.sandbox.mudbase.dev. " +
+        "Access defaults to 'token-gated'. Pass access 'public' only when anyone with the URL should reach the port. " +
         "The preview URL may return HTTP 502 for 10+ seconds while the sandbox warms up; " +
         "poll it until HTTP 200 or use mudbase_start_sandbox_service with waitForPort instead.",
       inputSchema: {
@@ -326,8 +328,8 @@ export function registerSandboxTools(server: McpServer, client: MudbaseClient): 
           .enum(["public", "token-gated"])
           .optional()
           .describe(
-            "'public': anyone with the URL can reach it. " +
-            "'token-gated': requires a Bearer token (returned in portToken).",
+            "Defaults to 'token-gated': requires a Bearer token (returned in portToken). " +
+            "'public' must be passed explicitly: anyone with the URL can reach it.",
           ),
       },
     },

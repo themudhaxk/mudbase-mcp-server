@@ -1,0 +1,36 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.themudhaxk/mudbase-mcp-server",
+  "title": "Mudbase",
+  "description": "Collections, documents, search and file storage for a Mudbase backend.",
+  "repository": {
+    "url": "https://github.com/themudhaxk/mudbase-mcp-server",
+    "source": "github"
+  },
+  "version": "0.2.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "mudbase-mcp-server",
+      "version": "0.2.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "MUDBASE_API_KEY",
+          "description": "Mudbase project API key (starts with ak_). Create it in the Mudbase console under your project's API Keys settings.",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "MUDBASE_BASE_URL",
+          "description": "Optional. Override the API base URL. Only needed for a self-hosted or non-default deployment.",
+          "isRequired": false,
+          "isSecret": false,
+          "default": "https://api.mudbase.dev"
+        }
+      ]
+    }
+  ]
+}

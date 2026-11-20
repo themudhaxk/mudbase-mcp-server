@@ -2,6 +2,7 @@
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { createServer } from "./server.js";
 import { DEFAULT_BASE_URL } from "./client.js";
+import { isSandboxToolsEnabled, SANDBOX_TOOLS_ENV } from "./tools/index.js";
 
 async function main(): Promise<void> {
   const apiKey = process.env.MUDBASE_API_KEY;
@@ -17,7 +18,11 @@ async function main(): Promise<void> {
 
   const baseUrl = process.env.MUDBASE_BASE_URL || DEFAULT_BASE_URL;
 
-  const server = createServer({ apiKey, baseUrl });
+  const server = createServer({
+    apiKey,
+    baseUrl,
+    sandboxTools: isSandboxToolsEnabled(process.env[SANDBOX_TOOLS_ENV]),
+  });
   const transport = new StdioServerTransport();
   await server.connect(transport);
 

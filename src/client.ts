@@ -239,7 +239,7 @@ export class MudbaseClient {
     });
   }
 
-  // ---- Sandbox (Cells) ----
+  // ---- Sandbox ----
 
   /**
    * Create a new sandbox session.

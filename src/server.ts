@@ -8,6 +8,8 @@ export const SERVER_VERSION = "0.1.0";
 export interface CreateServerOptions {
   apiKey: string;
   baseUrl?: string;
+  /** Register the sandbox tools. Defaults to false. */
+  sandboxTools?: boolean;
 }
 
 /** Build a fully configured, not-yet-connected Mudbase MCP server. */
@@ -19,7 +21,7 @@ export function createServer(options: CreateServerOptions): McpServer {
     version: SERVER_VERSION,
   });
 
-  registerAllTools(server, client);
+  registerAllTools(server, client, { sandboxTools: options.sandboxTools === true });
 
   return server;
 }

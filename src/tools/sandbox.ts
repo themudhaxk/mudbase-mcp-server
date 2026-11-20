@@ -1,11 +1,12 @@
 /**
- * Sandbox (Cells) tools for the Mudbase MCP server.
+ * Sandbox tools for the Mudbase MCP server. Registered only when the
+ * MUDBASE_ENABLE_SANDBOX_TOOLS environment variable is on (see tools/index.ts).
  *
  * These tools give an MCP client (Claude Code, Claude Desktop, etc.) the
  * ability to create and manage cloud sandbox sessions, run commands,
  * read and write files, start services, and expose ports.
  *
- * Each tool maps to exactly one documented Mudbase Cells API endpoint.
+ * Each tool maps to exactly one documented Mudbase sandbox API endpoint.
  * Auth is the same X-API-Key used for all other Mudbase tools.
  */
 

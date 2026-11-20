@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { registerAllTools } from "../src/tools/index.js";
+import { registerAllTools, isSandboxToolsEnabled } from "../src/tools/index.js";
 import { MudbaseApiError } from "../src/client.js";
 import type { MudbaseClient } from "../src/client.js";
 
@@ -32,7 +32,7 @@ function createFakeClient(overrides: Partial<Record<keyof MudbaseClient, unknown
     deleteFile: vi.fn(),
     getFileDownloadUrl: vi.fn(),
     uploadFile: vi.fn(),
-    // Sandbox (Cells) methods
+    // Sandbox methods
     createSandboxSession: vi.fn(),
     listSandboxSessions: vi.fn(),
     getSandboxSession: vi.fn(),
@@ -47,10 +47,10 @@ function createFakeClient(overrides: Partial<Record<keyof MudbaseClient, unknown
 }
 
 describe("registerAllTools", () => {
-  it("registers every documented Mudbase tool exactly once", () => {
+  it("registers every documented Mudbase tool exactly once when sandbox tools are enabled", () => {
     const { server, tools } = createFakeServer();
     const client = createFakeClient();
-    registerAllTools(server, client);
+    registerAllTools(server, client, { sandboxTools: true });
 
     expect([...tools.keys()].sort()).toEqual(
       [
@@ -68,7 +68,7 @@ describe("registerAllTools", () => {
         "mudbase_upload_file",
         "mudbase_delete_file",
         "mudbase_get_file_download_url",
-        // Sandbox (Cells) tools
+        // Sandbox tools
         "mudbase_create_sandbox_session",
         "mudbase_list_sandbox_sessions",
         "mudbase_get_sandbox_session",
@@ -82,12 +82,66 @@ describe("registerAllTools", () => {
     );
   });
 
-  it("gives every tool a non-empty description", () => {
+  it("registers only the 14 core tools by default, with no sandbox tools", () => {
     const { server, tools } = createFakeServer();
     registerAllTools(server, createFakeClient());
+
+    expect([...tools.keys()].sort()).toEqual(
+      [
+        "mudbase_list_collections",
+        "mudbase_get_collection",
+        "mudbase_list_documents",
+        "mudbase_get_document",
+        "mudbase_create_document",
+        "mudbase_update_document",
+        "mudbase_delete_document",
+        "mudbase_search_documents",
+        "mudbase_list_buckets",
+        "mudbase_list_files",
+        "mudbase_get_file",
+        "mudbase_upload_file",
+        "mudbase_delete_file",
+        "mudbase_get_file_download_url",
+      ].sort(),
+    );
+    expect(tools.size).toBe(14);
+    expect([...tools.keys()].some((name) => name.includes("sandbox"))).toBe(false);
+  });
+
+  it("registers no sandbox tools when sandboxTools is explicitly false", () => {
+    const { server, tools } = createFakeServer();
+    registerAllTools(server, createFakeClient(), { sandboxTools: false });
+
+    expect(tools.size).toBe(14);
+    expect([...tools.keys()].some((name) => name.includes("sandbox"))).toBe(false);
+  });
+
+  it("gives every tool a non-empty description", () => {
+    const { server, tools } = createFakeServer();
+    registerAllTools(server, createFakeClient(), { sandboxTools: true });
     for (const [name, tool] of tools) {
       expect(tool.config.description, `${name} is missing a description`).toBeTruthy();
       expect(String(tool.config.description).length).toBeGreaterThan(10);
+    }
+  });
+});
+
+describe("isSandboxToolsEnabled", () => {
+  it("is off when the variable is unset or blank", () => {
+    expect(isSandboxToolsEnabled(undefined)).toBe(false);
+    expect(isSandboxToolsEnabled("")).toBe(false);
+    expect(isSandboxToolsEnabled("   ")).toBe(false);
+  });
+
+  it("is off for any value other than 1 or true", () => {
+    for (const value of ["0", "false", "no", "off", "yes", "enabled", "2"]) {
+      expect(isSandboxToolsEnabled(value), `value ${value}`).toBe(false);
+    }
+  });
+
+  it("is on for 1 or true in any case, ignoring surrounding spaces", () => {
+    for (const value of ["1", "true", "TRUE", " True ", "  1  "]) {
+      expect(isSandboxToolsEnabled(value), `value ${value}`).toBe(true);
     }
   });
 });
@@ -204,7 +258,7 @@ describe("mudbase_list_documents tool handler", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Sandbox (Cells) tool tests
+// Sandbox tool tests (registered only with sandboxTools: true)
 // ---------------------------------------------------------------------------
 
 describe("mudbase_create_sandbox_session tool handler", () => {
@@ -220,7 +274,7 @@ describe("mudbase_create_sandbox_session tool handler", () => {
       languageVersion: "3.12",
     };
     (client.createSandboxSession as ReturnType<typeof vi.fn>).mockResolvedValue(sessionResult);
-    registerAllTools(server, client);
+    registerAllTools(server, client, { sandboxTools: true });
 
     const tool = tools.get("mudbase_create_sandbox_session")!;
     const result = await tool.handler({
@@ -250,7 +304,7 @@ describe("mudbase_create_sandbox_session tool handler", () => {
     (client.createSandboxSession as ReturnType<typeof vi.fn>).mockRejectedValue(
       new MudbaseApiError("Monthly sandbox allowance reached.", { status: 402, code: "SMALL_HOURS_EXHAUSTED" }),
     );
-    registerAllTools(server, client);
+    registerAllTools(server, client, { sandboxTools: true });
 
     const tool = tools.get("mudbase_create_sandbox_session")!;
     const result = await tool.handler({ projectId: "proj1" });
@@ -269,7 +323,7 @@ describe("mudbase_exec_sandbox_command tool handler", () => {
     (client.execSandboxCommand as ReturnType<typeof vi.fn>).mockResolvedValue(
       "data: stdout:hello\n\ndata: exit:0\n\n",
     );
-    registerAllTools(server, client);
+    registerAllTools(server, client, { sandboxTools: true });
 
     const tool = tools.get("mudbase_exec_sandbox_command")!;
     await tool.handler({
@@ -299,7 +353,7 @@ describe("mudbase_write_sandbox_files tool handler", () => {
       success: true,
       results: [{ path: "app.py", success: true }],
     });
-    registerAllTools(server, client);
+    registerAllTools(server, client, { sandboxTools: true });
 
     const tool = tools.get("mudbase_write_sandbox_files")!;
     const files = [{ path: "app.py", content: "print('hi')", encoding: "text" as const }];
@@ -322,7 +376,7 @@ describe("mudbase_expose_sandbox_port tool handler", () => {
       port: 8000,
       publicUrl: "https://sb-sess1-8000.sandbox.mudbase.dev",
     });
-    registerAllTools(server, client);
+    registerAllTools(server, client, { sandboxTools: true });
 
     const tool = tools.get("mudbase_expose_sandbox_port")!;
     const result = await tool.handler({ projectId: "proj1", sessionId: "sess1", port: 8000 });
@@ -344,7 +398,7 @@ describe("mudbase_close_sandbox_session tool handler", () => {
     const { server, tools } = createFakeServer();
     const client = createFakeClient();
     (client.closeSandboxSession as ReturnType<typeof vi.fn>).mockResolvedValue({ success: true });
-    registerAllTools(server, client);
+    registerAllTools(server, client, { sandboxTools: true });
 
     const tool = tools.get("mudbase_close_sandbox_session")!;
     await tool.handler({ projectId: "proj1", sessionId: "sess1" });

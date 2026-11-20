@@ -153,6 +153,16 @@ Safety notes:
 - Turn the sandbox tools on only for an API key and a client you trust. Anything the model runs in a
   session runs with that session's access, not your local machine's.
 
+## Upgrading from 0.2.0
+
+Version 0.3.0 changes two defaults:
+
+- The nine sandbox tools are no longer registered by default. If you use them, set
+  `MUDBASE_ENABLE_SANDBOX_TOOLS` to `1` in the server's environment. The 14 data and storage tools are
+  unchanged.
+- `mudbase_expose_sandbox_port` now defaults to `token-gated`. A caller that relied on the old public default
+  must pass `access: "public"` explicitly.
+
 ## How errors are reported
 
 A failed API call (invalid API key, missing project, validation error, rate limit, and so on)

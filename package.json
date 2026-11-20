@@ -1,7 +1,7 @@
 {
   "name": "mudbase-mcp-server",
   "mcpName": "io.github.themudhaxk/mudbase-mcp-server",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "MCP server that exposes Mudbase database, storage and search as tools for Claude Code, Cursor and other MCP clients, gated by a Mudbase API key.",
   "type": "module",
   "license": "MIT",

@@ -151,6 +151,35 @@ describe("MudbaseClient storage methods", () => {
   });
 });
 
+describe("MudbaseClient exposeSandboxPort", () => {
+  beforeEach(() => {
+    requestMock.mockReset();
+    requestMock.mockResolvedValue({ data: { success: true } });
+  });
+
+  it("defaults access to token-gated when omitted", async () => {
+    const client = new MudbaseClient({ apiKey: "ak_test" });
+
+    await client.exposeSandboxPort({ projectId: "p1", sessionId: "s1", port: 8000 });
+
+    expect(requestMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: "POST",
+        url: "/api/sandboxes/projects/p1/sessions/s1/expose",
+        data: { port: 8000, access: "token-gated" },
+      }),
+    );
+  });
+
+  it("sends public only when it is asked for explicitly", async () => {
+    const client = new MudbaseClient({ apiKey: "ak_test" });
+
+    await client.exposeSandboxPort({ projectId: "p1", sessionId: "s1", port: 8000, access: "public" });
+
+    expect(requestMock).toHaveBeenCalledWith(expect.objectContaining({ data: { port: 8000, access: "public" } }));
+  });
+});
+
 describe("toMudbaseApiError", () => {
   it("passes an existing MudbaseApiError through unchanged", () => {
     const original = new MudbaseApiError("already normalized", { status: 404, code: "not_found" });

@@ -3,7 +3,8 @@ import { MudbaseClient, DEFAULT_BASE_URL } from "./client.js";
 import { registerAllTools } from "./tools/index.js";
 
 export const SERVER_NAME = "mudbase-mcp-server";
-export const SERVER_VERSION = "0.1.0";
+/** Keep in step with package.json and server.json (test/server.test.ts enforces this). */
+export const SERVER_VERSION = "0.3.0";
 
 export interface CreateServerOptions {
   apiKey: string;

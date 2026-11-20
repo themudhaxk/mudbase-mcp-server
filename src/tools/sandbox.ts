@@ -312,6 +312,7 @@ export function registerSandboxTools(server: McpServer, client: MudbaseClient): 
       description:
         "Expose an internal port so the session is reachable from the internet. " +
         "Returns a publicUrl in the form https://sb-{sessionId}-{port}.sandbox.mudbase.dev. " +
+        "Access defaults to 'token-gated'. Pass access 'public' only when anyone with the URL should reach the port. " +
         "The preview URL may return HTTP 502 for 10+ seconds while the sandbox warms up; " +
         "poll it until HTTP 200 or use mudbase_start_sandbox_service with waitForPort instead.",
       inputSchema: {
@@ -327,8 +328,8 @@ export function registerSandboxTools(server: McpServer, client: MudbaseClient): 
           .enum(["public", "token-gated"])
           .optional()
           .describe(
-            "'public': anyone with the URL can reach it. " +
-            "'token-gated': requires a Bearer token (returned in portToken).",
+            "Defaults to 'token-gated': requires a Bearer token (returned in portToken). " +
+            "'public' must be passed explicitly: anyone with the URL can reach it.",
           ),
       },
     },

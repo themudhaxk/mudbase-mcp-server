@@ -383,6 +383,7 @@ export class MudbaseClient {
   /**
    * Expose an internal port on the session.
    * Maps to POST /api/sandboxes/projects/:projectId/sessions/:sessionId/expose
+   * Access defaults to "token-gated". "public" must be passed explicitly.
    */
   exposeSandboxPort(params: {
     projectId: string;
@@ -393,7 +394,7 @@ export class MudbaseClient {
     return this.request({
       method: "POST",
       url: `/api/sandboxes/projects/${encodeURIComponent(params.projectId)}/sessions/${encodeURIComponent(params.sessionId)}/expose`,
-      data: { port: params.port, access: params.access ?? "public" },
+      data: { port: params.port, access: params.access ?? "token-gated" },
     });
   }
 
